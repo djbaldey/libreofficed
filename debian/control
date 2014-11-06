@@ -1,0 +1,15 @@
+Source: libreofficed
+Section: admin
+Priority: extra
+Maintainer: Grigoriy Kramarenko <root@rosix.ru>
+Build-Depends: debhelper (>= 8.0.0)
+Standards-Version: 3.9.3
+Homepage: https://bitbucket.org/rosix/libreofficed
+Vcs-Hg: https://bitbucket.org/rosix/libreofficed
+Vcs-Browser: https://bitbucket.org/rosix/libreofficed
+
+Package: libreofficed
+Architecture: any
+Depends: ${shlibs:Depends}, ${misc:Depends}
+Description: LibreOffice Multiport Daemon
+ Starts and stops multiple instances of libreoffice listeners.

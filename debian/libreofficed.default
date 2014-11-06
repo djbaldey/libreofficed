@@ -1,5 +1,6 @@
-### defaults file for libreofficed daemon mode
-### Uncomment needed settings
+# Defaults for libreofficed initscript
+# Uncomment and edit needed settings
+
 #DAEMON="/usr/lib/libreoffice/program/soffice.bin"
 #DAEMON_HOST="127.0.0.1"
 #DAEMON_PORT="2002 2003 2004 2005"

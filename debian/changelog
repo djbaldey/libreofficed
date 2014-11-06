@@ -1,3 +1,9 @@
+libreofficed (0.1-2) unstable; urgency=low
+
+  * fix debianization and depends
+
+ -- Grigoriy Kramarenko <root@rosix.ru>  Thu, 06 Nov 2014 12:47:31 +1000
+
 libreofficed (0.1-1) unstable; urgency=low
 
   * Initial release

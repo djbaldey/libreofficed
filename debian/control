@@ -9,7 +9,7 @@ Vcs-Hg: https://bitbucket.org/rosix/libreofficed
 Vcs-Browser: https://bitbucket.org/rosix/libreofficed
 
 Package: libreofficed
-Architecture: any
-Depends: ${shlibs:Depends}, ${misc:Depends}
+Architecture: all
+Depends: ${shlibs:Depends}, ${misc:Depends}, libreoffice-core (>= 3.5)
 Description: LibreOffice Multiport Daemon
  Starts and stops multiple instances of libreoffice listeners.

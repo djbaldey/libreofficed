@@ -1,7 +1,7 @@
 #!/bin/sh
 ### BEGIN INIT INFO
 # Provides:          libreofficed
-# Required-Start:    $network $local_fs
+# Required-Start:    $local_fs $remote_fs $all
 # Required-Stop:
 # Default-Start:     2 3 4 5
 # Default-Stop:      0 1 6
@@ -95,8 +95,11 @@ case "$1" in
   restart)
     do_stop && sleep 1 && do_start
     ;;
+  force-reload)
+    do_stop && sleep 1 && do_start
+    ;;
   *)
-    echo "Usage: ${SCRIPTNAME} {start|stop|status|restart}" >&2
+    echo "Usage: ${SCRIPTNAME} {start|stop|status|restart|force-reload}" >&2
     exit 3
     ;;
 esac

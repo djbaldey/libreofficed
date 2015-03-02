@@ -12,26 +12,27 @@
 # Author: Grigoriy Kramarenko <root@rosix.ru>
 
 # Variables:
+PATH=/usr/local/sbin:/usr/local/bin:/sbin:/bin:/usr/sbin:/usr/bin
 DAEMON="/usr/lib/libreoffice/program/soffice.bin"
 DAEMON_HOST=
 DAEMON_PORT=
 TEMP_DIR='/tmp'
-
-NAME=`grep --max-count=1 "^# Provides:" $(readlink -f $0)|cut --delimiter=' ' --field=3-|sed 's/^ *//'`
-
-# Read configuration variable file if it is present
-[ -r "/etc/default/${NAME}" ] && . "/etc/default/${NAME}"
+NAME='libreofficed'
+DESC='LibreOffice Multiport Daemon'
+LANG=C.UTF-8
 
 # Exit if the package is not installed
 [ -x "$DAEMON" ] || exit 0
 
-# Rewrite if it changed from config
-NAME=`grep --max-count=1 "^# Provides:" $(readlink -f $0)|cut --delimiter=' ' --field=3-|sed 's/^ *//'`
-DESC=`grep --max-count=1 "^# Short-Description:" $(readlink -f $0)|cut --delimiter=' ' --field=3-|sed 's/^ *//'`
+# Read configuration variable file if it is present
+[ -r "/etc/default/locale" ]  && . "/etc/default/locale"
+[ -r "/etc/default/${NAME}" ] && . "/etc/default/${NAME}"
 
-SRC_DIR=`pwd`
-DAEMON_NAME=`basename ${DAEMON}`
-DAEMON_HOME=`dirname ${DAEMON}`
+. /lib/lsb/init-functions
+
+SRC_DIR=$(pwd)
+DAEMON_NAME=$(basename ${DAEMON})
+DAEMON_HOME=$(dirname ${DAEMON})
 SCRIPTNAME="/etc/init.d/${NAME}"
 TEMP_HOME="${TEMP_DIR}/${NAME}"
 
@@ -42,7 +43,18 @@ _create_home() {
     echo ${home}
 }
 
+_test_ports() {
+    echo $(ps axX -U "root" | grep "${DAEMON_HOME}" | grep "${DAEMON_NAME}" | awk '{print $11}' | sed 's/--userid=port//g');
+}
+
 do_start() {
+
+    PORTS=$(_test_ports);
+
+    [ "${PORTS}" ] && echo -n "${NAME} is already running" && return 1
+
+    export LANG
+
     cd ${DAEMON_HOME}
 
     host=${DAEMON_HOST:-localhost}
@@ -51,11 +63,7 @@ do_start() {
     for port in ${DAEMON_PORT:-2002}
     do
         # Set user home
-        HOME=$(_create_home ${port})
-        export HOME
-
-        # Start daemon
-        echo "Run instance on ${host}:${port} using home directory ${HOME}"
+        export HOME=$(_create_home ${port})
 
         sock="socket,host=${host},port=${port};urp;StarOffice.ComponentContext"
         opts="--headless --invisible --nocrashreport --nodefault --nologo --nofirststartwizard --norestore"
@@ -63,45 +71,70 @@ do_start() {
         nohup ${DAEMON} --userid="port${port}" ${opts} --accept="${sock}" 1>"${HOME}.log" 2>&1 &
     done
 
+    echo -n "listens on ${DAEMON_PORT:-2002} port(s)"
+
     cd ${SRC_DIR}
 
     return 0
 }
 
 do_stop() {
-    echo "killall '${DAEMON_NAME}'" && killall "${DAEMON_NAME}"
-    return 0
+
+    PORTS=$(_test_ports);
+
+    if [ "${PORTS}" ]
+    then
+        killall "${DAEMON_NAME}"
+        [ ! ${1} ] && echo -n "done"
+        return 0
+    fi
+
+    [ ! ${1} ] && echo -n "${NAME} is not running"
+
+    return 1
 }
 
-do_status()
-{
-    ps axu | grep "root" | grep "${DAEMON_HOME}" | grep "${DAEMON_NAME}"
-    return 0
+do_status() {
+
+    PORTS=$(_test_ports);
+
+    if [ "${PORTS}" ]
+    then
+        echo -n "listens on ${PORTS} port(s)"
+        log_end_msg 0
+    else
+        echo -n "${NAME} is not running"
+        log_end_msg 1
+    fi
 }
 
 
 case "$1" in
-  start)
-    echo "Starting ${DESC}"
-    do_start
+    start)
+        log_begin_msg "Starting ${DESC}: "
+        do_start
+        log_end_msg $?
     ;;
-  stop)
-    echo "Stopping ${DESC}"
-    do_stop
+    stop)
+        log_begin_msg "Stopping ${DESC}: "
+        do_stop
+        log_end_msg $?
     ;;
-  status)
-    do_status
+    restart|reload|force-reload)
+        log_begin_msg "Restarting ${DESC}: "
+        do_stop 1 && sleep 1
+        do_start
+        log_end_msg $?
     ;;
-  restart)
-    do_stop && sleep 1 && do_start
+    status)
+        log_begin_msg "Status of ${DESC}: "
+        do_status
     ;;
-  force-reload)
-    do_stop && sleep 1 && do_start
-    ;;
-  *)
-    echo "Usage: ${SCRIPTNAME} {start|stop|status|restart|force-reload}" >&2
-    exit 3
+    *)
+        echo "Usage: ${SCRIPTNAME} {start|stop|status|restart|reload|force-reload}" >&2
+        exit 3
     ;;
 esac
 
-:
+exit 0
+

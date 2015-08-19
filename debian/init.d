@@ -1,4 +1,5 @@
 #!/bin/sh
+
 ### BEGIN INIT INFO
 # Provides:          libreofficed
 # Required-Start:    $local_fs $remote_fs $all
@@ -9,7 +10,7 @@
 # Description:       Starts and stops multiple instances of libreoffice listeners.
 ### END INIT INFO
 
-# Author: Grigoriy Kramarenko <root@rosix.ru>
+set -e
 
 # Variables:
 PATH=/usr/local/sbin:/usr/local/bin:/sbin:/bin:/usr/sbin:/usr/bin
@@ -21,8 +22,9 @@ NAME='libreofficed'
 DESC='LibreOffice Multiport Daemon'
 LANG=C.UTF-8
 
+
 # Exit if the package is not installed
-[ -x "$DAEMON" ] || exit 0
+test -x "$DAEMON"  || exit 0
 
 # Read configuration variable file if it is present
 [ -r "/etc/default/locale" ]  && . "/etc/default/locale"
@@ -44,14 +46,22 @@ _create_home() {
 }
 
 _test_ports() {
-    echo $(ps axX -U "root" | grep "${DAEMON_HOME}" | grep "${DAEMON_NAME}" | awk '{print $11}' | sed 's/--userid=port//g');
+    echo $(ps axX -U "root" | grep "${DAEMON_HOME}" | grep "${DAEMON_NAME}" | awk '{print $11}' | sed 's/.*port=\([[:digit:]]*\)\;.*/\1/');
 }
 
 do_start() {
 
     PORTS=$(_test_ports);
 
-    [ "${PORTS}" ] && echo -n "${NAME} is already running" && return 1
+    if [ "${PORTS}" ]; then
+
+        echo -n "${NAME} is already running..."
+
+        log_end_msg 1
+
+        return 1
+
+    fi;
 
     export LANG
 
@@ -65,13 +75,15 @@ do_start() {
         # Set user home
         export HOME=$(_create_home ${port})
 
-        sock="socket,host=${host},port=${port};urp;StarOffice.ComponentContext"
-        opts="--headless --invisible --nocrashreport --nodefault --nologo --nofirststartwizard --norestore"
+        sock="socket,host=${host},port=${port};tcpNoDelay=1;urp;StarOffice.Service"
+        opts="--headless --invisible --nofirststartwizard --nodefault --nologo --norestore"
 
-        nohup ${DAEMON} --userid="port${port}" ${opts} --accept="${sock}" 1>"${HOME}.log" 2>&1 &
+        nohup ${DAEMON} --accept="${sock}" ${opts} 1>"${HOME}.log" 2>&1 &
+
     done
 
     echo -n "listens on ${DAEMON_PORT:-2002} port(s)"
+    log_end_msg 0
 
     cd ${SRC_DIR}
 
@@ -85,11 +97,11 @@ do_stop() {
     if [ "${PORTS}" ]
     then
         killall "${DAEMON_NAME}"
-        [ ! ${1} ] && echo -n "done"
+        [ ! ${1} ] && echo -n "done" && log_end_msg 0
         return 0
     fi
 
-    [ ! ${1} ] && echo -n "${NAME} is not running"
+    [ ! ${1} ] && echo -n "${NAME} is not running" && log_end_msg 1
 
     return 1
 }
@@ -113,18 +125,15 @@ case "$1" in
     start)
         log_begin_msg "Starting ${DESC}: "
         do_start
-        log_end_msg $?
     ;;
     stop)
         log_begin_msg "Stopping ${DESC}: "
         do_stop
-        log_end_msg $?
     ;;
     restart|reload|force-reload)
         log_begin_msg "Restarting ${DESC}: "
         do_stop 1 && sleep 1
         do_start
-        log_end_msg $?
     ;;
     status)
         log_begin_msg "Status of ${DESC}: "
@@ -137,4 +146,5 @@ case "$1" in
 esac
 
 exit 0
+
 

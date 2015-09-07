@@ -75,7 +75,7 @@ do_start() {
         # Set user home
         export HOME=$(_create_home ${port})
 
-        sock="socket,host=${host},port=${port};tcpNoDelay=1;urp;StarOffice.Service"
+        sock="socket,host=${host},port=${port};urp;StarOffice.Service"
         opts="--headless --invisible --nofirststartwizard --nodefault --nologo --norestore"
 
         nohup ${DAEMON} --accept="${sock}" ${opts} 1>"${HOME}.log" 2>&1 &

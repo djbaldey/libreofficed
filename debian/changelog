@@ -1,3 +1,9 @@
+libreofficed (0.1-5) UNRELEASED; urgency=medium
+
+  * fixed init sctipr for LibreOffice 4
+
+ -- Grigoriy Kramarenko <root@rosix.ru>  Wed, 09 Sep 2015 10:54:55 +1000
+
 libreofficed (0.1-4) unstable; urgency=low
 
   * fix init script
